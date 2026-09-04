@@ -18,7 +18,9 @@ from app.engine.scoring.compliance_benchmark import InternationalComplianceEngin
 
 router = APIRouter()
 
-@router.post("/", response_model=ScanResponse, status_code=status.HTTP_201_CREATED)
+import os
+
+@router.post("/", response_model=ScanDetailResponse, status_code=status.HTTP_201_CREATED)
 async def start_scan(
     payload: ScanCreate,
     background_tasks: BackgroundTasks,
@@ -30,9 +32,16 @@ async def start_scan(
         if not is_valid:
             raise HTTPException(status_code=400, detail=err_msg)
 
-        # 2. Check/Associate Target
+        # 2. Check/Associate Target (Create if missing)
         res = await db.execute(select(Target).where(Target.url == normalized_url))
         target = res.scalar_one_or_none()
+        if not target:
+            from urllib.parse import urlparse
+            domain = urlparse(normalized_url).netloc or normalized_url
+            target = Target(url=normalized_url, domain=domain)
+            db.add(target)
+            await db.commit()
+            await db.refresh(target)
 
         # 3. Create Scan Record
         new_scan = Scan(
@@ -46,10 +55,30 @@ async def start_scan(
         await db.commit()
         await db.refresh(new_scan)
 
-        # 4. Dispatch Asynchronous Background Worker Task
-        background_tasks.add_task(run_scan_pipeline, new_scan.id, normalized_url, payload.profile)
+        # 4. Check Environment: On Vercel Serverless vs Dedicated Server
+        is_serverless = bool(os.getenv("VERCEL"))
+        if is_serverless:
+            from app.engine.tasks import run_fast_serverless_scan
+            await run_fast_serverless_scan(new_scan.id, normalized_url, payload.profile, db)
+            
+            # Re-fetch scan with vulnerabilities attached
+            res = await db.execute(
+                select(Scan)
+                .options(selectinload(Scan.vulnerabilities))
+                .where(Scan.id == new_scan.id)
+            )
+            completed_scan = res.scalar_one()
+            response_data = ScanDetailResponse.model_validate(completed_scan)
+            if completed_scan.domain_intel:
+                try:
+                    response_data.parsed_domain_intel = json.loads(completed_scan.domain_intel)
+                except Exception:
+                    response_data.parsed_domain_intel = None
+            return response_data
+        else:
+            background_tasks.add_task(run_scan_pipeline, new_scan.id, normalized_url, payload.profile)
+            return ScanDetailResponse.model_validate(new_scan)
 
-        return new_scan
     except HTTPException:
         raise
     except Exception as e:

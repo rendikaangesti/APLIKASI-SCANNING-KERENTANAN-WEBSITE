@@ -369,3 +369,204 @@ async def run_scan_pipeline(scan_id: int, target_url: str, profile: str = "passi
             await session.commit()
             await emit_log(f"[FATAL] Scan pipeline crashed: {str(e)}")
             await broadcast_scan_event(scan_id, {"type": "done", "status": "FAILED", "error": str(e)})
+
+
+async def run_fast_serverless_scan(scan_id: int, target_url: str, profile: str, session):
+    """
+    Eksekusi pemindaian cepat dan responsif khusus lingkungan Serverless (Vercel / Cloud Functions).
+    Menjalankan audit pasif + probe aktif paralel dalam waktu 2-3 detik tanpa risiko timeout serverless.
+    Menghasilkan temuan riil (Security Headers, TLS, Cookie, Tech, CORS, CSP, DNS, CVE, Sensitive Files).
+    """
+    import httpx
+    from urllib.parse import urlparse
+    
+    # Load Scan Record
+    res = await session.execute(select(Scan).where(Scan.id == scan_id))
+    scan = res.scalar_one_or_none()
+    if not scan:
+        return
+
+    findings: List[Dict[str, Any]] = []
+    domain_intel: Dict[str, Any] = {
+        "target_url": target_url,
+        "domain": urlparse(target_url).netloc or target_url,
+        "scan_profile": profile,
+        "serverless_mode": True
+    }
+
+    try:
+        scan.status = "ANALYZING"
+        scan.progress = 25
+        await session.commit()
+
+        # 1. Run Core Security Analyzers in Parallel
+        async def run_headers():
+            try:
+                return await SecurityHeaderAnalyzer().analyze(target_url)
+            except Exception:
+                return []
+
+        async def run_ssl():
+            try:
+                return await SSLTLSChecker().analyze(target_url)
+            except Exception:
+                return []
+
+        async def run_cookies():
+            try:
+                return await CookieSecurityAuditor().analyze(target_url)
+            except Exception:
+                return []
+
+        async def run_tech():
+            try:
+                return await TechnologyDetector().analyze(target_url)
+            except Exception:
+                return []
+
+        async def run_cors():
+            try:
+                return await CORSAnalyzer().analyze(target_url)
+            except Exception:
+                return []
+
+        async def run_csp():
+            try:
+                return await CSPAnalyzer().analyze(target_url)
+            except Exception:
+                return []
+
+        async def run_domain_intel():
+            try:
+                return await DomainRelationsAnalyzer().analyze(target_url)
+            except Exception:
+                return {}
+
+        async def run_email():
+            try:
+                return await TargetEmailDetector.detect(target_url)
+            except Exception:
+                return {}
+
+        async def run_cve():
+            try:
+                return await CVEFingerprintEngine().scan(target_url)
+            except Exception:
+                return []
+
+        # Gather parallel results with resilience
+        results = await asyncio.gather(
+            run_headers(),
+            run_ssl(),
+            run_cookies(),
+            run_tech(),
+            run_cors(),
+            run_csp(),
+            run_domain_intel(),
+            run_email(),
+            run_cve(),
+            return_exceptions=True
+        )
+
+        header_res, ssl_res, cookie_res, tech_res, cors_res, csp_res, dom_res, email_res, cve_res = results
+
+        if isinstance(header_res, list): findings.extend(header_res)
+        if isinstance(ssl_res, list): findings.extend(ssl_res)
+        if isinstance(cookie_res, list): findings.extend(cookie_res)
+        if isinstance(tech_res, list): findings.extend(tech_res)
+        if isinstance(cors_res, list): findings.extend(cors_res)
+        if isinstance(csp_res, list): findings.extend(csp_res)
+        if isinstance(cve_res, list): findings.extend(cve_res)
+
+        if isinstance(dom_res, dict):
+            domain_intel.update(dom_res)
+            if dom_res.get("findings"):
+                findings.extend(dom_res["findings"])
+
+        if isinstance(email_res, dict):
+            domain_intel["email_recon"] = email_res
+
+        # 2. Fast Active Probes (Key Sensitive Paths if active profile)
+        if profile.lower() == "active":
+            scan.progress = 65
+            await session.commit()
+            
+            try:
+                base = target_url.rstrip("/")
+                test_paths = ["/robots.txt", "/.env", "/.git/HEAD", "/admin", "/wp-login.php"]
+                async with httpx.AsyncClient(timeout=2.5, verify=False, follow_redirects=False) as client:
+                    for p in test_paths:
+                        try:
+                            resp = await client.get(f"{base}{p}")
+                            if p in ["/.env", "/.git/HEAD"] and resp.status_code == 200:
+                                findings.append({
+                                    "title": f"Sensitive File Exposure: {p}",
+                                    "severity": "Critical",
+                                    "cwe": "CWE-552",
+                                    "owasp_category": "A05:2021-Security Misconfiguration",
+                                    "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+                                    "description": f"File sensitif {p} dapat diakses publik tanpa autentikasi.",
+                                    "remediation": f"Blokir akses publik ke {p} pada konfigurasi web server.",
+                                    "evidence": f"HTTP {resp.status_code} Response on {base}{p}",
+                                    "target_url": f"{base}{p}"
+                                })
+                        except Exception:
+                            continue
+            except Exception:
+                pass
+
+        # 3. Store Findings & Calculate CVSS v3.1 Scores
+        scan.progress = 90
+        await session.commit()
+
+        crit_count = high_count = med_count = low_count = info_count = 0
+
+        for f in findings:
+            vector = f.get("cvss_vector", "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N")
+            calc_result = CVSSv31Calculator.calculate(vector)
+            score = calc_result["score"]
+            sev = f.get("severity") or calc_result["severity"]
+
+            vuln_record = Vulnerability(
+                scan_id=scan.id,
+                title=f.get("title", "Security Finding"),
+                severity=sev,
+                cvss_score=score,
+                cvss_vector=vector,
+                owasp_category=f.get("owasp_category", "A05:2021-Security Misconfiguration"),
+                cwe=f.get("cwe", "CWE-200"),
+                description=f.get("description", ""),
+                remediation=f.get("remediation", ""),
+                evidence=f.get("evidence", ""),
+                target_url=f.get("target_url", target_url),
+            )
+            session.add(vuln_record)
+
+            if sev == "Critical":
+                crit_count += 1
+            elif sev == "High":
+                high_count += 1
+            elif sev == "Medium":
+                med_count += 1
+            elif sev == "Low":
+                low_count += 1
+            else:
+                info_count += 1
+
+        scan.total_findings = len(findings)
+        scan.critical_count = crit_count
+        scan.high_count = high_count
+        scan.medium_count = med_count
+        scan.low_count = low_count
+        scan.info_count = info_count
+        scan.status = "COMPLETED"
+        scan.progress = 100
+        scan.completed_at = datetime.utcnow()
+        scan.domain_intel = json.dumps(domain_intel)
+        await session.commit()
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        scan.status = "FAILED"
+        await session.commit()

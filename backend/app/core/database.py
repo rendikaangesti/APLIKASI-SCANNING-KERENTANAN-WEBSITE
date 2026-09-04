@@ -50,6 +50,9 @@ async def get_db():
             await session.close()
 
 async def init_db():
+    # Crucial: Import models so they register on Base.metadata before create_all
+    from app.models.scan import Target, Scan, Vulnerability
+    
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
         

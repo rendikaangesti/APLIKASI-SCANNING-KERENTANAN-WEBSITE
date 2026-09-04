@@ -374,7 +374,20 @@ Seluruh perintah mengeksekusi probe jaringan & HTTP secara LANGSUNG ke domain ta
 
       const scanData = await response.json();
       setActiveScanId(scanData.id);
-      addLog(`[QUEUED] Scan ID #${scanData.id} terdaftar. Menghubungkan live WebSocket telemetry...`);
+      addLog(`[QUEUED] Scan ID #${scanData.id} terdaftar. Menghubungkan live telemetry...`);
+
+      // Handle direct completion on Serverless runtime (Vercel)
+      if (scanData.status === 'COMPLETED' || (scanData.vulnerabilities && scanData.vulnerabilities.length > 0)) {
+        setIsScanning(false);
+        setProgress(100);
+        setStage('Audit Selesai');
+        const vulns = scanData.vulnerabilities || [];
+        setFindings(vulns);
+        if (scanData.parsed_domain_intel) setDomainIntel(scanData.parsed_domain_intel);
+        addLog(`[DONE] Pemindaian selesai dengan ${scanData.total_findings || vulns.length} temuan kerentanan.`);
+        loadLiveAssetData(targetUrl, scanData.id);
+        return;
+      }
 
       // Connect to WebSocket Telemetry
       const wsUrl = getWsUrl(scanData.id);
