@@ -36,6 +36,7 @@
 
 ## 📑 Table of Contents
 
+- [Cloud Live Deployment & Demo](#-cloud-live-deployment--demo)
 - [Overview](#-overview)
 - [Target Versatility](#-target-versatility)
 - [Key Features](#-key-features)
@@ -60,6 +61,19 @@
 - [Contributing](#-contributing)
 - [License](#-license)
 - [GitHub Recommended Topics](#-github-recommended-topics-seo)
+
+---
+
+## 🚀 Cloud Live Deployment & Demo
+
+DJOERAGANCYBER is continuously deployed in the cloud and available for authorized live evaluations:
+
+| Component | Public URL | Description / Access Requirement |
+|:---|:---|:---|
+| **🌐 Live Web Application** | [**`https://djoeragancyber-scanning.vercel.app`**](https://djoeragancyber-scanning.vercel.app) | Public Interactive DAST Security Dashboard |
+| **🔑 Password Login Akses** | [**Follow & DM @rendikaangestii**](https://instagram.com/rendikaangestii) | Wajib Follow & DM Instagram untuk mendapatkan password demo |
+| **📡 Health Telemetry API** | [`/api/health`](https://djoeragancyber-scanning.vercel.app/api/health) | System health & status check (`200 OK`) |
+| **⚡ Live Scan Engine API** | [`/api/v1/scans/`](https://djoeragancyber-scanning.vercel.app/api/v1/scans/) | Real-time vulnerability probe dispatcher |
 
 ---
 
