@@ -11,8 +11,22 @@ import {
   BarChart2, Award, Gavel
 } from 'lucide-react';
 
-// ─── KONFIGURASI PASSWORD ─────────────────────────────────────────
+// ─── KONFIGURASI PASSWORD & API BASE ──────────────────────────────
 const APP_PASSWORD = 'djoeragancyber2026'; // Ganti password di sini
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
+const getWsUrl = (scanId) => {
+  if (import.meta.env.VITE_WS_URL) {
+    return `${import.meta.env.VITE_WS_URL}/api/v1/ws/scans/${scanId}`;
+  }
+  if (API_BASE) {
+    const wsProto = API_BASE.startsWith('https') ? 'wss:' : 'ws:';
+    const host = API_BASE.replace(/^https?:\/\//, '');
+    return `${wsProto}//${host}/api/v1/ws/scans/${scanId}`;
+  }
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${protocol}//${window.location.host}/api/v1/ws/scans/${scanId}`;
+};
 // ──────────────────────────────────────────────────────────────────
 
 // ─── OWASP Top 10 Reference for Severity Heatmap ─────────────────
@@ -278,7 +292,7 @@ Seluruh perintah mengeksekusi probe jaringan & HTTP secara LANGSUNG ke domain ta
     setEmailSending(true);
     setEmailResult(null);
     try {
-      const res = await fetch(`/api/v1/reports/${activeScanId}/email`, {
+      const res = await fetch(`${API_BASE}/api/v1/reports/${activeScanId}/email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -341,7 +355,7 @@ Seluruh perintah mengeksekusi probe jaringan & HTTP secara LANGSUNG ke domain ta
     setActiveTab('live_scanner');
 
     try {
-      const response = await fetch('/api/v1/scans/', {
+      const response = await fetch(`${API_BASE}/api/v1/scans/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ target_url: targetUrl, profile: profile })
@@ -363,8 +377,7 @@ Seluruh perintah mengeksekusi probe jaringan & HTTP secara LANGSUNG ke domain ta
       addLog(`[QUEUED] Scan ID #${scanData.id} terdaftar. Menghubungkan live WebSocket telemetry...`);
 
       // Connect to WebSocket Telemetry
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/api/v1/ws/scans/${scanData.id}`;
+      const wsUrl = getWsUrl(scanData.id);
       const ws = new WebSocket(wsUrl);
 
       ws.onmessage = (event) => {
@@ -413,7 +426,7 @@ Seluruh perintah mengeksekusi probe jaringan & HTTP secara LANGSUNG ke domain ta
   const pollScanStatus = async (scanId) => {
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`/api/v1/scans/${scanId}`);
+        const res = await fetch(`${API_BASE}/api/v1/scans/${scanId}`);
         if (res.ok) {
           const data = await res.json();
           setProgress(data.progress);
@@ -447,7 +460,7 @@ Seluruh perintah mengeksekusi probe jaringan & HTTP secara LANGSUNG ke domain ta
 
     setIsTermExecuting(true);
     try {
-      const res = await fetch('/api/v1/live/terminal-exec', {
+      const res = await fetch(`${API_BASE}/api/v1/live/terminal-exec`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -487,7 +500,7 @@ Seluruh perintah mengeksekusi probe jaringan & HTTP secara LANGSUNG ke domain ta
     if (!url.trim()) return;
     setIsAssetLoading(true);
     try {
-      const res = await fetch('/api/v1/live/explore', {
+      const res = await fetch(`${API_BASE}/api/v1/live/explore`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ target_url: url, scan_id: scanId })
@@ -511,7 +524,7 @@ Seluruh perintah mengeksekusi probe jaringan & HTTP secara LANGSUNG ke domain ta
 
     const fullUrl = targetUrl.replace(/\/+$/, '') + '/' + customPathInput.replace(/^\/+/, '');
     try {
-      const res = await fetch('/api/v1/live/terminal-exec', {
+      const res = await fetch(`${API_BASE}/api/v1/live/terminal-exec`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -546,7 +559,7 @@ Seluruh perintah mengeksekusi probe jaringan & HTTP secara LANGSUNG ke domain ta
     setIsVerifyingPoC(true);
 
     try {
-      const res = await fetch('/api/v1/live/verify-poc', {
+      const res = await fetch(`${API_BASE}/api/v1/live/verify-poc`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -584,7 +597,7 @@ Seluruh perintah mengeksekusi probe jaringan & HTTP secara LANGSUNG ke domain ta
     setInputTestResult(null);
 
     try {
-      const res = await fetch('/api/v1/live/test-input', {
+      const res = await fetch(`${API_BASE}/api/v1/live/test-input`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -645,7 +658,7 @@ Seluruh perintah mengeksekusi probe jaringan & HTTP secara LANGSUNG ke domain ta
     setDbBoundaryResult(null);
 
     try {
-      const res = await fetch('/api/v1/live/test-db-boundary', {
+      const res = await fetch(`${API_BASE}/api/v1/live/test-db-boundary`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1065,7 +1078,7 @@ app.disable('x-powered-by');`;
             {activeScanId && (
               <div className="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
                 <a
-                  href={`/api/v1/reports/${activeScanId}/pdf`}
+                  href={`${API_BASE}/api/v1/reports/${activeScanId}/pdf`}
                   target="_blank"
                   rel="noreferrer"
                   className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 hover:text-indigo-600 text-xs font-semibold flex items-center space-x-1.5 transition shadow-sm border border-slate-200"
@@ -1076,14 +1089,14 @@ app.disable('x-powered-by');`;
                 </a>
 
                 <a
-                  href={`/api/v1/reports/${activeScanId}/sarif`}
+                  href={`${API_BASE}/api/v1/reports/${activeScanId}/sarif`}
                   className="px-2.5 py-1.5 rounded-lg hover:bg-white text-slate-600 hover:text-indigo-600 text-xs font-semibold transition"
                   title="Unduh format SARIF 2.1.0 untuk DevSecOps"
                 >
                   SARIF
                 </a>
                 <a
-                  href={`/api/v1/reports/${activeScanId}/json`}
+                  href={`${API_BASE}/api/v1/reports/${activeScanId}/json`}
                   className="px-2.5 py-1.5 rounded-lg hover:bg-white text-slate-600 hover:text-indigo-600 text-xs font-semibold transition"
                   title="Unduh format JSON Raw"
                 >
@@ -2265,7 +2278,7 @@ app.disable('x-powered-by');`;
                   </p>
                 </div>
                 <a
-                  href={activeScanId ? `/api/v1/reports/${activeScanId}/pdf` : '#'}
+                  href={activeScanId ? `${API_BASE}/api/v1/reports/${activeScanId}/pdf` : '#'}
                   target="_blank"
                   rel="noreferrer"
                   className={`w-full py-2.5 rounded-lg text-xs font-bold flex items-center justify-center space-x-2 transition ${
@@ -2291,7 +2304,7 @@ app.disable('x-powered-by');`;
                   </p>
                 </div>
                 <a
-                  href={activeScanId ? `/api/v1/reports/${activeScanId}/sarif` : '#'}
+                  href={activeScanId ? `${API_BASE}/api/v1/reports/${activeScanId}/sarif` : '#'}
                   className={`w-full py-2.5 rounded-lg text-xs font-bold flex items-center justify-center space-x-2 transition ${
                     activeScanId 
                       ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm' 
@@ -2316,7 +2329,7 @@ app.disable('x-powered-by');`;
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <a
-                    href={activeScanId ? `/api/v1/reports/${activeScanId}/csv` : '#'}
+                    href={activeScanId ? `${API_BASE}/api/v1/reports/${activeScanId}/csv` : '#'}
                     className={`py-2 rounded-lg text-xs font-bold flex items-center justify-center space-x-1.5 transition ${
                       activeScanId 
                         ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
@@ -2326,7 +2339,7 @@ app.disable('x-powered-by');`;
                     <span>CSV Excel</span>
                   </a>
                   <a
-                    href={activeScanId ? `/api/v1/reports/${activeScanId}/json` : '#'}
+                    href={activeScanId ? `${API_BASE}/api/v1/reports/${activeScanId}/json` : '#'}
                     className={`py-2 rounded-lg text-xs font-bold flex items-center justify-center space-x-1.5 transition ${
                       activeScanId 
                         ? 'bg-slate-800 hover:bg-slate-900 text-white' 
@@ -2363,7 +2376,7 @@ app.disable('x-powered-by');`;
                   </ul>
                 </div>
                 <a
-                  href={activeScanId ? `/api/v1/reports/${activeScanId}/sqlite` : '#'}
+                  href={activeScanId ? `${API_BASE}/api/v1/reports/${activeScanId}/sqlite` : '#'}
                   className={`w-full py-2.5 rounded-lg text-xs font-bold flex items-center justify-center space-x-2 transition ${
                     activeScanId 
                       ? 'bg-cyan-600 hover:bg-cyan-700 text-white shadow-md shadow-cyan-200' 
