@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: vulnhunter-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-scanner_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secure_vault_pwd_123}
+      POSTGRES_DB: ${POSTGRES_DB:-vuln_scanner_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-scanner_admin} -d ${POSTGRES_DB:-vuln_scanner_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache & Message Broker
+  redis:
+    image: redis:7-alpine
+    container_name: vulnhunter-redis
+    restart: unless-stopped
+    networks:
+      - internal-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Core API & Scanning Engine
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vulnhunter-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-scanner_admin}:${POSTGRES_PASSWORD:-secure_vault_pwd_123}@postgres:5432/${POSTGRES_DB:-vuln_scanner_db}
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-vulnhunter-super-secret-key-prod}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - internal-net
+      - scanner-isolated-egress
+
+  # Asynchronous Background Worker
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vulnhunter-worker
+    command: celery -A app.engine.celery_app worker --loglevel=info -c 4
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-scanner_admin}:${POSTGRES_PASSWORD:-secure_vault_pwd_123}@postgres:5432/${POSTGRES_DB:-vuln_scanner_db}
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-vulnhunter-super-secret-key-prod}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - internal-net
+      - scanner-isolated-egress
+
+networks:
+  # Internal secured network for DB & Redis
+  internal-net:
+    driver: bridge
+  # Isolated scanning network with anti-SSRF egress restrictions
+  scanner-isolated-egress:
+    driver: bridge
+
+volumes:
+  postgres_data:
