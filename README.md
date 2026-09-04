@@ -1,5 +1,6 @@
 <p align="center">
   <img src="https://img.shields.io/badge/SECURITY-DAST%20%26%20AUDIT-0ea5e9?style=for-the-badge&logo=shield&logoColor=white" alt="Security Suite" />
+  <a href="https://frontend-gray-nine-86.vercel.app" target="_blank"><img src="https://img.shields.io/badge/LIVE%20DEMO-Vercel%20App-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Demo" /></a>
 </p>
 
 <h1 align="center">🛡️ DJOERAGANCYBER Security Suite</h1>
