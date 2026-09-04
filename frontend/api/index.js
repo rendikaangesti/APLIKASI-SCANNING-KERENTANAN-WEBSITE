@@ -7,6 +7,28 @@
 const scansStore = new Map();
 let nextScanId = 1001;
 
+// Helper to safely parse request body from Vercel Serverless
+async function parseBody(req) {
+  if (req.body) {
+    if (typeof req.body === 'object') return req.body;
+    if (typeof req.body === 'string') {
+      try { return JSON.parse(req.body); } catch (_) { return {}; }
+    }
+  }
+  return new Promise((resolve) => {
+    let data = '';
+    req.on('data', chunk => { data += chunk; });
+    req.on('end', () => {
+      try {
+        resolve(JSON.parse(data));
+      } catch (_) {
+        resolve({});
+      }
+    });
+    req.on('error', () => resolve({}));
+  });
+}
+
 export default async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -19,6 +41,7 @@ export default async function handler(req, res) {
 
   const url = new URL(req.url, `https://${req.headers.host || 'localhost'}`);
   const pathname = url.pathname;
+  const body = await parseBody(req);
 
   try {
     // 1. Health Check
@@ -34,7 +57,6 @@ export default async function handler(req, res) {
 
     // 2. Start Scan: POST /api/v1/scans/ or POST /api/v1/scans
     if (req.method === 'POST' && (pathname === '/api/v1/scans/' || pathname === '/api/v1/scans')) {
-      const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
       let targetUrl = (body.target_url || '').trim();
       const profile = (body.profile || 'active').toLowerCase();
 
@@ -101,7 +123,6 @@ export default async function handler(req, res) {
 
     // 5. Interactive Live Terminal: POST /api/v1/live/terminal-exec
     if (req.method === 'POST' && pathname === '/api/v1/live/terminal-exec') {
-      const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
       const command = (body.command || 'help').trim();
       const targetUrl = (body.target_url || 'https://example.com').trim();
       const execResult = await handleTerminalCommand(command, targetUrl);
@@ -110,7 +131,6 @@ export default async function handler(req, res) {
 
     // 6. Live Asset Explorer: POST /api/v1/live/explore
     if (req.method === 'POST' && pathname === '/api/v1/live/explore') {
-      const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
       const targetUrl = (body.target_url || '').trim() || 'https://example.com';
       const scanId = body.scan_id || 1001;
       const exploreData = await handleExploreAssets(targetUrl, scanId);
@@ -119,7 +139,6 @@ export default async function handler(req, res) {
 
     // 7. Live PoC Verifier: POST /api/v1/live/verify-poc
     if (req.method === 'POST' && pathname === '/api/v1/live/verify-poc') {
-      const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
       const targetUrl = body.target_url || '';
       const findingTitle = body.finding_title || 'Security Misconfiguration';
       const verifyResult = await handleVerifyPoC(targetUrl, findingTitle, body.evidence);
@@ -128,7 +147,6 @@ export default async function handler(req, res) {
 
     // 8. Live Input Test: POST /api/v1/live/test-input
     if (req.method === 'POST' && pathname === '/api/v1/live/test-input') {
-      const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
       return res.status(200).json({
         target_url: body.target_url,
         payload_type: body.payload_type || 'XSS Polyglot',
@@ -142,7 +160,6 @@ export default async function handler(req, res) {
 
     // 9. Live DB Boundary Test: POST /api/v1/live/test-db-boundary
     if (req.method === 'POST' && pathname === '/api/v1/live/test-db-boundary') {
-      const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
       return res.status(200).json({
         target_url: body.target_url,
         tested_boundary: 'Least Privilege & Query Sanitization Boundary',
