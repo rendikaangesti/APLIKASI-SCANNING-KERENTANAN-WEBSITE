@@ -1049,12 +1049,35 @@ app.disable('x-powered-by');`;
               >Login</button>
             </form>
 
-            {/* Security note */}
-            <div style={{ marginTop:'20px', padding:'10px 12px', backgroundColor:'#f8fafc', borderRadius:'10px', border:'1px solid #e2e8f0' }}>
-              <p style={{ color:'#64748b', fontSize:'11px', margin:0, textAlign:'center', lineHeight:'1.6' }}>
-                🔒 Platform audit khusus <strong style={{color:'#334155'}}>authorized security auditor</strong>.<br/>
-                Seluruh aktivitas sesi direkam.
+            {/* Security note & Instagram Access */}
+            <div style={{ marginTop:'20px', padding:'14px 16px', backgroundColor:'#fdf2f8', borderRadius:'12px', border:'1px solid #fbcfe8', textAlign:'center' }}>
+              <p style={{ color:'#9d174d', fontSize:'12.5px', fontWeight:700, margin:'0 0 6px', display:'flex', alignItems:'center', justifyContent:'center', gap:'6px' }}>
+                🔑 Butuh Password Akses Demo?
               </p>
+              <p style={{ color:'#475569', fontSize:'11.5px', margin:'0 0 12px', lineHeight:'1.5' }}>
+                Wajib <strong>Follow & DM Instagram</strong> developer resmi di bawah ini untuk mendapatkan password login:
+              </p>
+              <a
+                href="https://instagram.com/rendikaangestii"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display:'inline-flex',
+                  alignItems:'center',
+                  gap:'8px',
+                  padding:'9px 18px',
+                  background:'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+                  color:'#ffffff',
+                  borderRadius:'8px',
+                  fontSize:'12.5px',
+                  fontWeight:700,
+                  textDecoration:'none',
+                  boxShadow:'0 4px 14px rgba(225,48,108,0.35)',
+                  transition:'all 0.2s'
+                }}
+              >
+                📸 Follow & DM @rendikaangestii
+              </a>
             </div>
           </div>
         </div>

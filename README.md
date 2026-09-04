@@ -1,6 +1,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/SECURITY-DAST%20%26%20AUDIT-0ea5e9?style=for-the-badge&logo=shield&logoColor=white" alt="Security Suite" />
   <a href="https://frontend-gray-nine-86.vercel.app" target="_blank"><img src="https://img.shields.io/badge/LIVE%20DEMO-Vercel%20App-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Demo" /></a>
+  <a href="https://instagram.com/rendikaangestii" target="_blank"><img src="https://img.shields.io/badge/INSTAGRAM-Follow%20%26%20DM-E4405F?style=for-the-badge&logo=instagram&logoColor=white" alt="Instagram @rendikaangestii" /></a>
 </p>
 
 <h1 align="center">🛡️ DJOERAGANCYBER Security Suite</h1>
@@ -13,6 +14,13 @@
   <em>An enterprise-grade, full-stack DAST (Dynamic Application Security Testing) platform featuring automated vulnerability detection, passive OSINT reconnaissance, an interactive live security terminal, one-click PoC verification, and executive PDF audit reporting.</em>
 </p>
 
+> [!IMPORTANT]
+> ### 🔐 Akses Live Demo & Password Login
+> - 🌐 **Public Live Demo:** [https://frontend-gray-nine-86.vercel.app](https://frontend-gray-nine-86.vercel.app)
+> - 🔑 **Password Akses Demo:** Untuk mencegah penyalahgunaan pemindaian server dan menjaga integritas platform, dashboard demo dilindungi autentikasi.
+> - 📸 **Cara Mendapatkan Password:** Wajib **Follow & DM Instagram:** [**@rendikaangestii**](https://instagram.com/rendikaangestii)  
+>   *(Cukup kirimkan pesan DM: `"Halo mas Rendika, minta password akses demo DjoeraganCyber"`, password akan langsung diberikan!)*
+
 <p align="center">
   <a href="#-key-features"><img src="https://img.shields.io/badge/Vulnerabilities-Active%20%26%20Passive-blue.svg?style=flat-square" alt="Vulnerabilities" /></a>
   <a href="https://fastapi.tiangolo.com/"><img src="https://img.shields.io/badge/Backend-FastAPI%20v0.110-009688.svg?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI" /></a>
@@ -20,8 +28,8 @@
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.10%2B-3776ab.svg?style=flat-square&logo=python&logoColor=white" alt="Python" /></a>
   <a href="https://www.postgresql.org/"><img src="https://img.shields.io/badge/Database-SQLite%20%7C%20PostgreSQL-336791.svg?style=flat-square&logo=postgresql&logoColor=white" alt="Database" /></a>
   <a href="https://owasp.org/www-project-top-ten/"><img src="https://img.shields.io/badge/Compliance-OWASP%20Top%2010%20%26%20CVSS%20v3.1-orange.svg?style=flat-square" alt="Compliance" /></a>
+  <a href="https://instagram.com/rendikaangestii"><img src="https://img.shields.io/badge/Instagram-@rendikaangestii-E4405F.svg?style=flat-square&logo=instagram&logoColor=white" alt="Instagram" /></a>
   <a href="#-license"><img src="https://img.shields.io/badge/License-MIT-green.svg?style=flat-square" alt="License" /></a>
-  <a href="#-contributing"><img src="https://img.shields.io/badge/PRs-Welcome-brightgreen.svg?style=flat-square" alt="PRs Welcome" /></a>
 </p>
 
 ---
