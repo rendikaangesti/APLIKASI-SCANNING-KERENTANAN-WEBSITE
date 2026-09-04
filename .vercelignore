@@ -1,0 +1,8 @@
+# Ignore backend completely from Vercel frontend build
+backend/
+*/backend/
+*.db
+*.sqlite
+*.sqlite3
+docker-compose.yml
+*.bat
