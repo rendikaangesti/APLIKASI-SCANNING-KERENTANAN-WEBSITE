@@ -1,6 +1,6 @@
 <p align="center">
   <img src="https://img.shields.io/badge/SECURITY-DAST%20%26%20AUDIT-0ea5e9?style=for-the-badge&logo=shield&logoColor=white" alt="Security Suite" />
-  <a href="https://frontend-gray-nine-86.vercel.app" target="_blank"><img src="https://img.shields.io/badge/LIVE%20DEMO-Vercel%20App-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Demo" /></a>
+  <a href="https://djoeragancyber-scanning.vercel.app" target="_blank"><img src="https://img.shields.io/badge/LIVE%20DEMO-Vercel%20App-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Demo" /></a>
   <a href="https://instagram.com/rendikaangestii" target="_blank"><img src="https://img.shields.io/badge/INSTAGRAM-Follow%20%26%20DM-E4405F?style=for-the-badge&logo=instagram&logoColor=white" alt="Instagram @rendikaangestii" /></a>
 </p>
 
@@ -16,7 +16,7 @@
 
 > [!IMPORTANT]
 > ### 🔐 Akses Live Demo & Password Login
-> - 🌐 **Public Live Demo:** [https://frontend-gray-nine-86.vercel.app](https://frontend-gray-nine-86.vercel.app)
+> - 🌐 **Public Live Demo:** [https://djoeragancyber-scanning.vercel.app](https://djoeragancyber-scanning.vercel.app)
 > - 🔑 **Password Akses Demo:** Untuk mencegah penyalahgunaan pemindaian server dan menjaga integritas platform, dashboard demo dilindungi autentikasi.
 > - 📸 **Cara Mendapatkan Password:** Wajib **Follow & DM Instagram:** [**@rendikaangestii**](https://instagram.com/rendikaangestii)  
 >   *(Cukup kirimkan pesan DM: `"Halo mas Rendika, minta password akses demo DjoeraganCyber"`, password akan langsung diberikan!)*
