@@ -24,31 +24,38 @@ async def start_scan(
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db)
 ):
-    # 1. Anti-SSRF Validation
-    is_valid, normalized_url, err_msg = validate_and_sanitize_target(payload.target_url)
-    if not is_valid:
-        raise HTTPException(status_code=400, detail=err_msg)
+    try:
+        # 1. Anti-SSRF Validation
+        is_valid, normalized_url, err_msg = validate_and_sanitize_target(payload.target_url)
+        if not is_valid:
+            raise HTTPException(status_code=400, detail=err_msg)
 
-    # 2. Check/Associate Target
-    res = await db.execute(select(Target).where(Target.url == normalized_url))
-    target = res.scalar_one_or_none()
+        # 2. Check/Associate Target
+        res = await db.execute(select(Target).where(Target.url == normalized_url))
+        target = res.scalar_one_or_none()
 
-    # 3. Create Scan Record
-    new_scan = Scan(
-        target_id=target.id if target else None,
-        target_url=normalized_url,
-        profile=payload.profile.lower(),
-        status="QUEUED",
-        progress=0
-    )
-    db.add(new_scan)
-    await db.commit()
-    await db.refresh(new_scan)
+        # 3. Create Scan Record
+        new_scan = Scan(
+            target_id=target.id if target else None,
+            target_url=normalized_url,
+            profile=payload.profile.lower(),
+            status="QUEUED",
+            progress=0
+        )
+        db.add(new_scan)
+        await db.commit()
+        await db.refresh(new_scan)
 
-    # 4. Dispatch Asynchronous Background Worker Task
-    background_tasks.add_task(run_scan_pipeline, new_scan.id, normalized_url, payload.profile)
+        # 4. Dispatch Asynchronous Background Worker Task
+        background_tasks.add_task(run_scan_pipeline, new_scan.id, normalized_url, payload.profile)
 
-    return new_scan
+        return new_scan
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Database or scan initialization error: {str(e)}")
 
 @router.get("/", response_model=List[ScanResponse])
 async def list_scans(db: AsyncSession = Depends(get_db)):

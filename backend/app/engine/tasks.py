@@ -36,6 +36,12 @@ async def run_scan_pipeline(scan_id: int, target_url: str, profile: str = "passi
     Mendukung Passive Intelligence, Subdomain Enum, CVE Fingerprinting,
     serta Active Fuzzing (XSS, SQLi, SSTI, Open Redirect, LFI, JWT, Dir Fuzzing).
     """
+    try:
+        from app.core.database import init_db
+        await init_db()
+    except Exception as e:
+        print(f"[TASK INIT DB WARNING] {e}")
+
     async with AsyncSessionLocal() as session:
         # Load Scan Record
         res = await session.execute(select(Scan).where(Scan.id == scan_id))

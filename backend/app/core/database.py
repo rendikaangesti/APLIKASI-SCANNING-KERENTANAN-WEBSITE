@@ -19,7 +19,30 @@ AsyncSessionLocal = async_sessionmaker(
 
 Base = declarative_base()
 
+import os
+
+# Ensure SQLite directory exists if using file path
+if "sqlite" in settings.DATABASE_URL:
+    try:
+        raw_path = settings.DATABASE_URL.replace("sqlite+aiosqlite:///", "").replace("sqlite:///", "")
+        if raw_path.startswith("./"):
+            raw_path = raw_path[2:]
+        db_dir = os.path.dirname(raw_path)
+        if db_dir and not os.path.exists(db_dir):
+            os.makedirs(db_dir, exist_ok=True)
+    except Exception as e:
+        print(f"[DB DIR INIT WARNING] {e}")
+
+_db_initialized = False
+
 async def get_db():
+    global _db_initialized
+    if not _db_initialized:
+        try:
+            await init_db()
+            _db_initialized = True
+        except Exception as e:
+            print(f"[DB INIT ERROR in get_db] {e}")
     async with AsyncSessionLocal() as session:
         try:
             yield session

@@ -30,14 +30,40 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register API Routers
+# Global Exception Handler
+from fastapi.responses import JSONResponse
+from fastapi import Request
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    import traceback
+    err_trace = traceback.format_exc()
+    print(f"[SERVER EXCEPTION] {request.method} {request.url.path}: {err_trace}")
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": f"Server error: {str(exc)}",
+            "type": type(exc).__name__,
+            "path": request.url.path
+        }
+    )
+
+# Register API Routers with standard /api/v1 prefix
 app.include_router(scans.router, prefix=f"{settings.API_V1_STR}/scans", tags=["Scans"])
 app.include_router(targets.router, prefix=f"{settings.API_V1_STR}/targets", tags=["Targets"])
 app.include_router(reports.router, prefix=f"{settings.API_V1_STR}/reports", tags=["Reports"])
 app.include_router(ws.router, prefix=f"{settings.API_V1_STR}", tags=["WebSocket Telemetry"])
 app.include_router(live.router, prefix=f"{settings.API_V1_STR}/live", tags=["Live Audit & Exploration"])
 
+# Also register with /v1 prefix for Serverless runtimes that strip /api
+app.include_router(scans.router, prefix="/v1/scans", tags=["Scans-Direct"])
+app.include_router(targets.router, prefix="/v1/targets", tags=["Targets-Direct"])
+app.include_router(reports.router, prefix="/v1/reports", tags=["Reports-Direct"])
+app.include_router(live.router, prefix="/v1/live", tags=["Live-Direct"])
+
 @app.get("/health", tags=["Health"])
+@app.get("/api/health", tags=["Health"])
+@app.get("/api", tags=["Health"])
 async def health_check():
     return {
         "status": "healthy",

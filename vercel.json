@@ -1,11 +1,15 @@
 {
-  "buildCommand": "cd frontend && npm install && npm run build",
+  "buildCommand": "if [ -d \"frontend\" ]; then cd frontend; elif [ -d \"../frontend\" ]; then cd ../frontend; fi && npm install && npm run build",
   "outputDirectory": "frontend/dist",
   "framework": "vite",
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/api"
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/api",
+      "destination": "/api/index.py"
     },
     {
       "source": "/(.*)",
