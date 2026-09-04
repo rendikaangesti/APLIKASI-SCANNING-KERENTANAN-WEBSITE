@@ -7,10 +7,11 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     VERSION: str = "2.0.0"
     
-    # Database (Default to aiosqlite for zero-config local run, switchable to asyncpg PostgreSQL via env)
+    # Database (Auto-detect Vercel serverless /tmp writable directory)
+    default_db: str = "sqlite+aiosqlite:////tmp/scanner.db" if os.getenv("VERCEL") else "sqlite+aiosqlite:///./scanner.db"
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL",
-        "sqlite+aiosqlite:///./scanner.db"
+        default_db
     )
     
     # Redis / Celery
